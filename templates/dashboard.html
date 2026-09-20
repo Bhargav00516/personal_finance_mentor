@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Finance Mentor{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h1>Hello, {{ (user.name or 'there').split()[0] }}</h1>
+      <p>Overview of your assessment, expenses and tools.</p>
+    </div>
+    <a href="{{ url_for('assessment_page') }}" class="btn btn-primary">
+      <i class="fas fa-stethoscope me-1"></i> Health check
+    </a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title">Health score</div>
+        <div class="stat-value">
+          {{ assessment.financial_health_score if assessment else '—' }}
+        </div>
+        <div class="stat-label">App indicator · not a bureau score</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title">Assessments</div>
+        <div class="stat-value">{{ user.assessments|length }}</div>
+        <div class="stat-label">Saved reviews</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title">Calculations</div>
+        <div class="stat-value">{{ user.calculations|length }}</div>
+        <div class="stat-label">EMI · invest · goals</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title">Expenses logged</div>
+        <div class="stat-value">{{ user.expenses|length }}</div>
+        <div class="stat-label">All time</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="card-title mb-0">This month’s spending</div>
+            <a href="{{ url_for('expenses_page') }}" class="btn btn-ghost btn-sm">
+              View all
+            </a>
+          </div>
+
+          <div class="stat-value" id="monthlyExpenseTotal">₹0</div>
+
+          <div class="progress mt-3">
+            <div id="expenseProgress" class="progress-bar" style="width: 0%"></div>
+          </div>
+
+          <div class="stat-label mt-2">Vs reported monthly income</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="card-title">Top categories (year)</div>
+
+          <div id="topCategories" class="mt-2">
+            <div class="text-muted small">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if assessment %}
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <div class="card-title">Score ring</div>
+
+          <canvas id="healthChart" height="140"></canvas>
+
+          <div class="mt-2 fw-semibold">
+            {{ assessment.financial_health_score }}/100
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="card-title">Cash flow</div>
+          <canvas id="cashChart" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="card-title">Portfolio mix</div>
+          <canvas id="portfolioChart" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="card-title">Assets vs liabilities</div>
+          <canvas id="netChart" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card mb-4">
+    <div class="card-body empty-state">
+      <i class="fas fa-clipboard-list"></i>
+
+      <p>
+        No assessment yet. Run a health check to see scores and a structured report.
+      </p>
+
+      <a href="{{ url_for('assessment_page') }}" class="btn btn-primary">
+        Start health check
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h6 fw-semibold mb-3">Quick tools</h2>
+
+      <div class="tools-grid">
+        <div class="tool-card" onclick="openCalcModal('investment')">
+          <i class="fas fa-chart-line"></i>
+          <h6>Investment</h6>
+          <small>Growth estimate</small>
+        </div>
+
+        <div class="tool-card" onclick="openCalcModal('emi')">
+          <i class="fas fa-home"></i>
+          <h6>Loan EMI</h6>
+          <small>Repayment plan</small>
+        </div>
+
+        <div class="tool-card" onclick="openCalcModal('goal')">
+          <i class="fas fa-bullseye"></i>
+          <h6>Goal planner</h6>
+          <small>Monthly savings</small>
+        </div>
+
+        <div class="tool-card" onclick="openCreditTips()">
+          <i class="fas fa-id-card"></i>
+          <h6>Credit basics</h6>
+          <small>Education guide</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+{% if assessment %}
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: {
+      display: false
+    }
+  }
+};
+
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+new Chart(document.getElementById('healthChart'), {
+  type: 'doughnut',
+
+  data: {
+    datasets: [{
+      data: [
+        {{ assessment.financial_health_score }},
+        {{ 100 - assessment.financial_health_score }}
+      ],
+
+      backgroundColor: [
+        '#10b981',
+        'rgba(255,255,255,0.08)'
+      ],
+
+      borderWidth: 0
+    }]
+  },
+
+  options: {
+    ...chartDefaults,
+    cutout: '72%'
+  }
+});
+
+new Chart(document.getElementById('cashChart'), {
+  type: 'bar',
+
+  data: {
+    labels: [
+      'Income',
+      'Expenses',
+      'Surplus'
+    ],
+
+    datasets: [{
+      data: [
+        {{ assessment.monthly_income or 0 }},
+        {{ assessment.monthly_expenses or 0 }},
+        {{
+          (assessment.monthly_income or 0) -
+          (assessment.monthly_expenses or 0)
+        }}
+      ],
+
+      backgroundColor: [
+        '#10b981',
+        '#f87171',
+        '#3b82f6'
+      ],
+
+      borderRadius: 6
+    }]
+  },
+
+  options: {
+    ...chartDefaults,
+
+    scales: {
+      y: {
+        ticks: {
+          callback: v =>
+            '₹' + Number(v).toLocaleString('en-IN')
+        }
+      }
+    }
+  }
+});
+
+const invVals = [
+  {{ (assessment.sip_amount or 0) * 12 }},
+  {{ assessment.ppf_amount or 0 }},
+  {{ assessment.stocks_amount or 0 }},
+  {{ assessment.fd_amount or 0 }},
+  {{ assessment.gold_holdings or 0 }}
+];
+
+const invLabels = [
+  'SIP (yr)',
+  'PPF',
+  'Stocks',
+  'FD',
+  'Gold'
+];
+
+const invFiltered = invVals
+  .map((v, i) => ({
+    v,
+    l: invLabels[i]
+  }))
+  .filter(x => x.v > 0);
+
+new Chart(document.getElementById('portfolioChart'), {
+  type: 'doughnut',
+
+  data: {
+    labels: invFiltered.map(x => x.l),
+
+    datasets: [{
+      data: invFiltered.map(x => x.v),
+
+      backgroundColor: [
+        '#10b981',
+        '#34d399',
+        '#6ee7b7',
+        '#3b82f6',
+        '#fbbf24'
+      ],
+
+      borderWidth: 0
+    }]
+  },
+
+  options: {
+    ...chartDefaults,
+
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+
+        labels: {
+          boxWidth: 10,
+          font: {
+            size: 10
+          }
+        }
+      }
+    }
+  }
+});
+
+const assets =
+  {{ (assessment.sip_amount or 0) * 12 }} +
+  {{ assessment.ppf_amount or 0 }} +
+  {{ assessment.stocks_amount or 0 }} +
+  {{ assessment.fd_amount or 0 }} +
+  {{ assessment.gold_holdings or 0 }} +
+  {{ assessment.emergency_fund or 0 }};
+
+const liabilities =
+  {{ assessment.home_loan or 0 }} +
+  {{ assessment.personal_loan or 0 }} +
+  {{ assessment.education_loan or 0 }};
+
+new Chart(document.getElementById('netChart'), {
+  type: 'bar',
+
+  data: {
+    labels: [
+      'Assets',
+      'Liabilities',
+      'Net'
+    ],
+
+    datasets: [{
+      data: [
+        assets,
+        liabilities,
+        assets - liabilities
+      ],
+
+      backgroundColor: [
+        '#10b981',
+        '#f87171',
+        '#3b82f6'
+      ],
+
+      borderRadius: 6
+    }]
+  },
+
+  options: {
+    ...chartDefaults,
+
+    scales: {
+      y: {
+        ticks: {
+          callback: v =>
+            '₹' + Number(v).toLocaleString('en-IN')
+        }
+      }
+    }
+  }
+});
+
+{% endif %}
+
+async function loadExpenseSummary() {
+  try {
+    const res = await fetch('/api/expenses/summary');
+    const data = await res.json();
+
+    document.getElementById('monthlyExpenseTotal').textContent =
+      '₹' + formatINR(data.monthly_total);
+
+    const income =
+      {{ assessment.monthly_income if assessment else 0 }};
+
+    const pct = income > 0
+      ? Math.min((data.monthly_total / income) * 100, 100)
+      : 0;
+
+    document.getElementById('expenseProgress').style.width =
+      pct + '%';
+
+    const sorted = Object.entries(
+      data.category_breakdown || {}
+    )
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    document.getElementById('topCategories').innerHTML =
+      sorted.length
+        ? sorted.map(([c, a]) =>
+            `<div class="d-flex justify-content-between py-1">
+              <span class="text-muted text-capitalize">${c}</span>
+              <span>₹${formatINR(a)}</span>
+            </div>`
+          ).join('')
+        : '<div class="text-muted small">No expenses yet</div>';
+
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+loadExpenseSummary();
+</script>
+{% endblock %}

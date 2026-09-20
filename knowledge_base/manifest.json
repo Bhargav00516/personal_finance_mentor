@@ -1,0 +1,82 @@
+{
+  "version": "2026-09-19",
+  "jurisdiction": "India",
+  "documents": [
+    {
+      "file": "00_README.md",
+      "characters": 1412
+    },
+    {
+      "file": "01_budgeting_saving.md",
+      "characters": 1793
+    },
+    {
+      "file": "02_goals_planning.md",
+      "characters": 1279
+    },
+    {
+      "file": "03_banking_payments_fraud.md",
+      "characters": 1602
+    },
+    {
+      "file": "04_debt_credit_loans.md",
+      "characters": 2029
+    },
+    {
+      "file": "05_investing_basics.md",
+      "characters": 1313
+    },
+    {
+      "file": "06_mutual_funds_equity_fixed_income_gold.md",
+      "characters": 1467
+    },
+    {
+      "file": "07_insurance.md",
+      "characters": 1290
+    },
+    {
+      "file": "08_retirement_pension_estate.md",
+      "characters": 1076
+    },
+    {
+      "file": "09_tax_awareness_india.md",
+      "characters": 1859
+    },
+    {
+      "file": "10_financial_health_metrics.md",
+      "characters": 1077
+    },
+    {
+      "file": "11_prompting_and_guardrails.md",
+      "characters": 1291
+    },
+    {
+      "file": "12_sources.md",
+      "characters": 1202
+    }
+  ],
+  "freshness_classes": {
+    "critical": [
+      "tax",
+      "regulatory thresholds",
+      "deadlines",
+      "fraud procedures",
+      "product terms"
+    ],
+    "high": [
+      "investment taxation",
+      "insurance rules",
+      "pension rules",
+      "credit rules"
+    ],
+    "medium": [
+      "planning heuristics",
+      "financial ratios"
+    ],
+    "low": [
+      "definitions",
+      "mathematical formulas"
+    ]
+  },
+  "note": "Verify current official sources before using time-sensitive information."
+}

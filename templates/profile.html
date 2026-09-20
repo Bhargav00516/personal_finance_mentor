@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - GlossyFinance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, rgba(255,45,117,0.15), rgba(0,0,0,0.3));
+        border-radius: 24px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 1px solid rgba(255,45,117,0.3);
+    }
+    
+    .avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 3px solid #ff2d75;
+        object-fit: cover;
+    }
+    
+    .stat-card {
+        background: rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        background: rgba(255,45,117,0.1);
+        transform: translateY(-5px);
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #ff2d75;
+    }
+    
+    .assessment-card {
+        background: rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+        border: 1px solid rgba(255,45,117,0.2);
+    }
+    
+    .assessment-card:hover {
+        border-color: #ff2d75;
+        transform: translateX(5px);
+    }
+    
+    .calculation-card {
+        background: rgba(255,255,255,0.03);
+        border-radius: 12px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .badge-pink {
+        background: #ff2d75;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    
+    .btn-danger-custom {
+        background: linear-gradient(135deg, #ff4444, #ff6666);
+        border: none;
+        padding: 10px 24px;
+        border-radius: 50px;
+        color: white;
+        transition: all 0.3s;
+    }
+    
+    .btn-danger-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255,68,68,0.3);
+    }
+    
+    .green-divider {
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #00ff9d, #00ff9d, transparent);
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                <img src="{{ user.picture or 'https://ui-avatars.com/api/?name=' + user.name + '&background=ff2d75&color=fff&size=100' }}" class="avatar">
+            </div>
+            <div class="col-md-6">
+                <h2>{{ user.name }}</h2>
+                <p class="text-muted mb-1"><i class="fas fa-envelope"></i> {{ user.email }}</p>
+                <p class="text-muted mb-0"><i class="fas fa-calendar-alt"></i> Member since {{ user.created_at.strftime('%B %Y') }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button class="btn-danger-custom" onclick="resetAllData()">
+                    <i class="fas fa-trash-alt"></i> Reset All Data
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ user.assessments|length }}</div>
+                <div>Financial Assessments</div>
+                <small class="text-muted">Total health checks</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ user.calculations|length }}</div>
+                <div>Calculations</div>
+                <small class="text-muted">Investment, EMI, Goals</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% set latest = user.get_latest_assessment() %}
+                    {{ latest.financial_health_score if latest else '0' }}
+                </div>
+                <div>Latest Health Score</div>
+                <small class="text-muted">/100</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% if latest and latest.credit_score %}
+                        {{ latest.credit_score }}
+                    {% else %}
+                        Not Set
+                    {% endif %}
+                </div>
+                <div>Credit Score</div>
+                <small class="text-muted">CIBIL Score</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="green-divider"></div>
+    
+    <!-- Assessment History -->
+    <h3 class="mb-3"><i class="fas fa-history"></i> Assessment History</h3>
+    {% if user.assessments %}
+        {% for assessment in user.assessments %}
+        <div class="assessment-card">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <div class="badge-pink" style="display: inline-block;">
+                        {{ assessment.assessment_date.strftime('%d %b %Y') }}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <strong>Health Score:</strong><br>
+                    <span class="text-pink">{{ assessment.financial_health_score }}/100</span>
+                </div>
+                <div class="col-md-2">
+                    <strong>Age:</strong> {{ assessment.age }}<br>
+                    <strong>Income:</strong> ₹{{ "%.0f"|format(assessment.monthly_income) }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Income Source:</strong><br>
+                    {{ assessment.income_source.replace('_', ' ').title() if assessment.income_source else 'Not set' }}
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <button class="btn btn-sm btn-outline-pink" onclick="viewReport({{ assessment.id }})">
+                        <i class="fas fa-eye"></i> View Report
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-chart-line" style="font-size: 60px; color: rgba(255,45,117,0.3);"></i>
+            <p class="mt-3">No assessments yet. <a href="{{ url_for('assessment_page') }}">Take your first health check!</a></p>
+        </div>
+    {% endif %}
+    
+    <div class="green-divider"></div>
+    
+    <!-- Calculation History -->
+    <h3 class="mb-3"><i class="fas fa-calculator"></i> Calculation History</h3>
+    {% if user.calculations %}
+        <div class="row">
+            {% for calc in user.calculations %}
+            <div class="col-md-6">
+                <div class="calculation-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge-pink" style="font-size: 0.7rem;">
+                                {% if calc.calc_type == 'investment' %}
+                                    📈 Investment
+                                {% elif calc.calc_type == 'emi' %}
+                                    🏠 EMI
+                                {% else %}
+                                    🎯 Goal
+                                {% endif %}
+                            </span>
+                            <div class="mt-2">
+                                <small class="text-muted">{{ calc.created_at.strftime('%d %b %Y, %H:%M') }}</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-pink" onclick="viewCalculation({{ calc.id }})">
+                            <i class="fas fa-chart-line"></i> Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calculator" style="font-size: 60px; color: rgba(255,45,117,0.3);"></i>
+            <p class="mt-3">No calculations yet. Use our calculators on the dashboard!</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+async function resetAllData() {
+    if (confirm('⚠️ WARNING: This will permanently delete ALL your financial data and assessments. This action cannot be undone. Are you sure?')) {
+        const response = await fetch('/reset-data', { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            alert('All your data has been reset!');
+            window.location.reload();
+        } else {
+            alert('Error resetting data: ' + data.error);
+        }
+    }
+}
+
+function viewReport(assessmentId) {
+    window.location.href = `/assessment/${assessmentId}`;
+}
+
+function viewCalculation(calcId) {
+    // You can implement a modal to show calculation details
+    alert('Calculation details feature coming soon!');
+}
+</script>
+{% endblock %}

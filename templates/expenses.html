@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Expenses · Finance Mentor{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h1>Expense tracker</h1>
+      <p>Log spending by category and review totals by period.</p>
+    </div>
+    <button class="btn btn-primary" onclick="showAddExpense()">
+      <i class="fas fa-plus me-1"></i> Add expense
+    </button>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="month" onclick="setFilter('month', this)">This month</button>
+    <button class="filter-btn" data-filter="year" onclick="setFilter('year', this)">This year</button>
+    <button class="filter-btn" onclick="toggleCustom()">Custom range</button>
+  </div>
+
+  <div id="customRange" class="row g-2 mb-3" style="display: none;">
+    <div class="col-md-4">
+      <input type="date" id="startDate" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <input type="date" id="endDate" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <button class="btn btn-outline w-100" onclick="applyCustom()">Apply</button>
+    </div>
+  </div>
+
+  <div class="stats-grid mb-4">
+    <div class="card"><div class="card-body">
+      <div class="card-title">Total</div>
+      <div class="stat-value" id="totalAmount">₹0</div>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div class="card-title">Average / entry</div>
+      <div class="stat-value" id="avgAmount">₹0</div>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div class="card-title">Transactions</div>
+      <div class="stat-value" id="transactionCount">0</div>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div class="card-title">Largest</div>
+      <div class="stat-value" id="highestAmount">₹0</div>
+    </div></div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="card-title">By category</div>
+      <div id="categoryBreakdown" class="row g-2 mt-1">
+        <div class="col-12 text-muted small">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th>Amount</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="expensesList">
+        <tr><td colspan="5" class="text-center text-muted">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="addExpenseModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add expense</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Amount (₹)</label>
+          <input type="number" id="expenseAmount" class="form-control" min="0.01" step="0.01" placeholder="0">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select id="expenseCategory" class="form-select">
+            <option value="food">Food & dining</option>
+            <option value="transport">Transport</option>
+            <option value="shopping">Shopping</option>
+            <option value="bills">Bills & utilities</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="health">Health</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <input type="text" id="expenseDesc" class="form-control" placeholder="Optional note">
+        </div>
+        <div class="mb-0">
+          <label class="form-label">Date</label>
+          <input type="date" id="expenseDate" class="form-control">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="addExpense()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentFilter = 'month';
+let startDate = null;
+let endDate = null;
+
+document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
+
+function setFilter(type, btn) {
+  currentFilter = type;
+  startDate = endDate = null;
+  document.getElementById('customRange').style.display = 'none';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  loadExpenses();
+}
+
+function toggleCustom() {
+  document.getElementById('customRange').style.display = 'flex';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+}
+
+function applyCustom() {
+  startDate = document.getElementById('startDate').value;
+  endDate = document.getElementById('endDate').value;
+  if (!startDate || !endDate) {
+    toast('Select both dates', 'error');
+    return;
+  }
+  currentFilter = 'custom';
+  loadExpenses();
+}
+
+function showAddExpense() {
+  document.getElementById('expenseAmount').value = '';
+  document.getElementById('expenseDesc').value = '';
+  document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
+  new bootstrap.Modal(document.getElementById('addExpenseModal')).show();
+}
+
+async function loadExpenses() {
+  let url = '/api/expenses?filter=' + currentFilter;
+  if (currentFilter === 'custom' && startDate && endDate) {
+    url = `/api/expenses?start_date=${startDate}&end_date=${endDate}`;
+  }
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const list = data.expenses || [];
+    document.getElementById('totalAmount').textContent = '₹' + formatINR(data.total);
+    document.getElementById('avgAmount').textContent = '₹' + formatINR(list.length ? data.total / list.length : 0);
+    document.getElementById('transactionCount').textContent = list.length;
+    document.getElementById('highestAmount').textContent = '₹' + formatINR(list.length ? Math.max(...list.map(e => e.amount)) : 0);
+
+    const cats = Object.entries(data.category_breakdown || {});
+    document.getElementById('categoryBreakdown').innerHTML = cats.length
+      ? cats.map(([c, a]) => `
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center p-2 rounded" style="background:var(--bg-elevated)">
+              <span class="badge badge-${c}">${c}</span>
+              <span class="fw-semibold">₹${formatINR(a)}</span>
+            </div>
+          </div>`).join('')
+      : '<div class="col-12 text-muted small">No expenses in this period</div>';
+
+    document.getElementById('expensesList').innerHTML = list.length
+      ? list.map(e => `
+          <tr>
+            <td>${e.date}</td>
+            <td><span class="badge badge-${e.category}">${e.category}</span></td>
+            <td class="text-muted">${e.description || '—'}</td>
+            <td class="fw-semibold">₹${formatINR(e.amount)}</td>
+            <td><button class="btn btn-ghost btn-sm text-danger" onclick="deleteExpense(${e.id})"><i class="fas fa-trash"></i></button></td>
+          </tr>`).join('')
+      : '<tr><td colspan="5" class="text-center text-muted">No expenses found</td></tr>';
+  } catch (err) {
+    console.error(err);
+    toast('Could not load expenses', 'error');
+  }
+}
+
+async function addExpense() {
+  const amount = parseFloat(document.getElementById('expenseAmount').value);
+  const category = document.getElementById('expenseCategory').value;
+  const description = document.getElementById('expenseDesc').value;
+  const date = document.getElementById('expenseDate').value;
+  if (!amount || amount <= 0) {
+    toast('Enter a valid amount', 'error');
+    return;
+  }
+  try {
+    const res = await fetch('/api/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, category, description, date }),
+    });
+    const result = await res.json();
+    if (result.success) {
+      bootstrap.Modal.getInstance(document.getElementById('addExpenseModal')).hide();
+      toast('Expense saved');
+      loadExpenses();
+    } else {
+      toast(result.error || 'Save failed', 'error');
+    }
+  } catch {
+    toast('Save failed', 'error');
+  }
+}
+
+async function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  try {
+    const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (result.success) {
+      toast('Deleted');
+      loadExpenses();
+    }
+  } catch {
+    toast('Delete failed', 'error');
+  }
+}
+
+loadExpenses();
+</script>
+{% endblock %}

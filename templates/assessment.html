@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Health check · Finance Mentor{% endblock %}
+
+{% block content %}
+<div class="page" style="max-width: 720px;">
+  <div class="page-header text-center">
+    <h1>Financial health check</h1>
+    <p>Enter what you know. Blank fields are fine — the report will note gaps.</p>
+  </div>
+
+  <form id="assessmentForm">
+    <div class="form-section">
+      <h3><i class="fas fa-user"></i> About you</h3>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Age <span class="required">*</span></label>
+          <input type="number" id="age" class="form-control" required min="1" max="120" placeholder="e.g. 28">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Income source <span class="required">*</span></label>
+          <select id="incomeSource" class="form-select" required>
+            <option value="">Select…</option>
+            <option value="pocket_money">Pocket money / student</option>
+            <option value="stipend">Stipend / intern</option>
+            <option value="salary">Salary</option>
+            <option value="freelance">Freelance</option>
+            <option value="business">Business</option>
+            <option value="retired">Retired</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Monthly income (₹)</label>
+          <input type="number" id="monthlyIncome" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Monthly expenses (₹)</label>
+          <input type="number" id="monthlyExpenses" class="form-control" value="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="fas fa-shield-heart"></i> Buffers & credit</h3>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Credit score (optional)</label>
+          <input type="number" id="creditScore" class="form-control" placeholder="300–900" min="300" max="900">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Emergency fund (₹)</label>
+          <input type="number" id="emergencyFund" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Gold holdings (₹)</label>
+          <input type="number" id="goldHoldings" class="form-control" value="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="fas fa-hand-holding-dollar"></i> Loans</h3>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Home loan principal</label>
+          <input type="number" id="homeLoan" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Home loan EMI</label>
+          <input type="number" id="homeLoanEMI" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Education loan principal</label>
+          <input type="number" id="educationLoan" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Education loan EMI</label>
+          <input type="number" id="educationLoanEMI" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Personal / other loan principal</label>
+          <input type="number" id="personalLoan" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Personal loan EMI</label>
+          <input type="number" id="personalLoanEMI" class="form-control" value="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="fas fa-umbrella"></i> Insurance</h3>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Health insurance</label>
+          <select id="healthInsurance" class="form-select">
+            <option value="none">None</option>
+            <option value="individual">Individual</option>
+            <option value="family">Family floater</option>
+            <option value="corporate">Employer</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Health cover (₹)</label>
+          <input type="number" id="healthCover" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Dependents</label>
+          <input type="number" id="dependents" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Life insurance</label>
+          <select id="lifeInsurance" class="form-select">
+            <option value="none">None</option>
+            <option value="term">Term</option>
+            <option value="ulip">ULIP</option>
+            <option value="endowment">Endowment</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Life cover (₹)</label>
+          <input type="number" id="lifeCover" class="form-control" value="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="fas fa-chart-pie"></i> Investments</h3>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">SIP / mutual funds (monthly ₹)</label>
+          <input type="number" id="sipAmount" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">PPF / NPS (yearly ₹)</label>
+          <input type="number" id="ppfAmount" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Stocks / equity (₹)</label>
+          <input type="number" id="stocksAmount" class="form-control" value="0" min="0">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Fixed deposits (₹)</label>
+          <input type="number" id="fdAmount" class="form-control" value="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="fas fa-flag"></i> Goals</h3>
+      <div class="mb-3">
+        <label class="form-label">Short-term (1–3 years)</label>
+        <textarea id="shortTermGoals" class="form-control" rows="2" placeholder="e.g. emergency fund, vehicle, travel"></textarea>
+      </div>
+      <div>
+        <label class="form-label">Longer-term (5+ years)</label>
+        <textarea id="longTermGoals" class="form-control" rows="2" placeholder="e.g. home down payment, education, retirement"></textarea>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
+      Generate education report
+    </button>
+    <p class="text-muted small text-center mt-3 mb-0">
+      Results are educational. Verify rates, tax rules and products with official sources.
+    </p>
+  </form>
+</div>
+
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center py-4">
+        <div class="spinner-border text-accent mb-3"></div>
+        <p class="mb-0 text-muted">Building your report…</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('assessmentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const loading = new bootstrap.Modal(document.getElementById('loadingModal'));
+  btn.disabled = true;
+  loading.show();
+
+  const num = (id) => parseFloat(document.getElementById(id).value) || 0;
+  const payload = {
+    age: parseInt(document.getElementById('age').value, 10) || null,
+    income_source: document.getElementById('incomeSource').value,
+    monthly_income: num('monthlyIncome'),
+    monthly_expenses: num('monthlyExpenses'),
+    credit_score: parseInt(document.getElementById('creditScore').value, 10) || null,
+    emergency_fund: num('emergencyFund'),
+    gold_holdings: num('goldHoldings'),
+    home_loan: num('homeLoan'),
+    home_loan_emi: num('homeLoanEMI'),
+    education_loan: num('educationLoan'),
+    education_loan_emi: num('educationLoanEMI'),
+    personal_loan: num('personalLoan'),
+    personal_loan_emi: num('personalLoanEMI'),
+    health_insurance: document.getElementById('healthInsurance').value,
+    health_cover: num('healthCover'),
+    life_insurance: document.getElementById('lifeInsurance').value,
+    life_cover: num('lifeCover'),
+    dependents: parseInt(document.getElementById('dependents').value, 10) || 0,
+    sip_amount: num('sipAmount'),
+    ppf_amount: num('ppfAmount'),
+    stocks_amount: num('stocksAmount'),
+    fd_amount: num('fdAmount'),
+    short_term_goals: document.getElementById('shortTermGoals').value,
+    long_term_goals: document.getElementById('longTermGoals').value,
+  };
+
+  if (!payload.age || !payload.income_source) {
+    loading.hide();
+    btn.disabled = false;
+    toast('Age and income source are required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/submit-assessment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json();
+    loading.hide();
+    if (result.success) {
+      toast('Report ready');
+      setTimeout(() => { window.location.href = '/dashboard'; }, 900);
+    } else {
+      toast(result.error || 'Could not save assessment', 'error');
+      btn.disabled = false;
+    }
+  } catch {
+    loading.hide();
+    toast('Network error', 'error');
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}
